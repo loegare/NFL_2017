@@ -1,0 +1,49 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(sqldf)
+
+library(scales)
+drive<-readxl::read_xlsx('NFL.xlsx',sheet='Drive')
+game<-readxl::read_xlsx('NFL.xlsx',sheet='Game')
+play<-readxl::read_xlsx('NFL.xlsx',sheet='Player-Play')
+play<- merge(play,game,by="gameid")
+```
+```{r}
+tackles = sqldf('select * from play where cat="kickret_yds"')
+ggplot(tackles,aes(team,val))+geom_bar(stat = 'identity')+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+sqldf('select * from tackles where team = "MIA"')
+```
+```{r}
+game2<- group_by(game,week, winner) %>%
+      summarise(wins = n())
+game2<-sqldf('select * from game2 where week < 7' )
+game2$highlight <- ifelse(game2$winner == "KC" , '1', '0')
+ggplot(game2[order(game2$wins,decreasing=T),],aes(x=reorder(winner,-wins, function(x){ sum(x) }),wins))+geom_bar(stat='identity',aes(fill=highlight))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  scale_y_continuous(breaks=pretty_breaks())
+
+
+game2
+```
+```{r}
+    
+    LL<-sqldf(paste('select * from play where week <= ',7,sep=' ' ))
+    LL <- group_by(LL,team,playername,cat) %>%
+      summarise(val = sum(val))
+    LL$selcat <- ifelse(LL$cat == 'kickret_yds' , '1', '0')
+    LL<-LL %>% filter(selcat == '1')
+    
+    LL<-LL[order(LL$val,decreasing=T),]
+    LL = LL[1:10,]
+    print(LL)
+    ggplot(LL,aes(paste(playername,team,sep='|'),val))+
+        geom_bar(stat = 'identity')
+```
+

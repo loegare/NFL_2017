@@ -1,0 +1,10 @@
+name: NFL_STATS
+title:
+username:
+account: shnipes
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 398687
+bundleId: 1530330
+url: https://shnipes.shinyapps.io/NFL_STATS/
+when: 1534008105.32869
