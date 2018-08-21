@@ -13,6 +13,8 @@ drive<-readxl::read_xlsx('NFL.xlsx',sheet='Drive')
 game<-readxl::read_xlsx('NFL.xlsx',sheet='Game')
 play<-readxl::read_xlsx('NFL.xlsx',sheet='Player-Play')
 play<- merge(play,game,by="gameid")
+
+game_stats<-readxl::read_xlsx('NFL.xlsx',sheet='Stats')
 ```
 ```{r}
 tackles = sqldf('select * from play where cat="kickret_yds"')

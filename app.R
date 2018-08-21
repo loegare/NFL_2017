@@ -14,6 +14,7 @@ library(scales)
 drive<-readxl::read_xlsx('NFL.xlsx',sheet='Drive')
 game<-readxl::read_xlsx('NFL.xlsx',sheet='Game')
 play<-readxl::read_xlsx('NFL.xlsx',sheet='Player-Play')
+game_stats<-readxl::read_xlsx('NFL.xlsx',sheet='Stats')
 #rsconnect::setAccountInfo(name='shnipes', token='6A6195725697F3D8AB463C0B34FC3209', secret='QGjr4Mn1z0nzrPlJct+DA86R2+axrTNO8uOHW6dm')
 
 teamWin <- group_by(game, winner) %>%
@@ -22,10 +23,10 @@ teamWin<-teamWin[order(teamWin$wins,decreasing=T),]
 selectedTeam = teamWin$winner[1]
 teamWin<-teamWin[order(teamWin$winner,decreasing=F),]
 
-uniquestat<-play$cat
-uniquestat<-unique(uniquestat)
+uniquestat<-game_stats$cat
 
 play<- merge(play,game,by="gameid")
+play<- merge(play,game_stats,by='cat')
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -59,7 +60,7 @@ ui <- fluidPage(
         tabsetPanel(type = "tabs",
                     tabPanel("Team", plotOutput("winPlot"),plotOutput("statPlot")),
                     tabPanel("League Leader", plotOutput("llPlot"))
-                   #, tabPanel("By Zip", plotOutput("table"))
+                   , tabPanel("By Zip", plotOutput("teamstats"))
         )
         
          
@@ -77,14 +78,17 @@ server <- function(input, output) {
     game2$highlight <- ifelse(game2$winner == input$team , '1', '0')
     game2
   })
-  
-  fbStats<-reactive({
+  limweek <- reactive({
     tackles<-play
     tackles<-sqldf(paste('select * from tackles where week <= ',input$week,sep=' ' ))
     
-    tackles<- group_by(tackles,team, cat) %>%
+    tackles<- group_by(tackles,team, cat,G_B,O_D) %>%
       summarise(val = sum(val))
     tackles$highlight <- ifelse(tackles$team == input$team , '1', '0')
+    tackles
+  })
+  fbStats<-reactive({
+    tackles<-limweek()
     tackles$selcat <- ifelse(tackles$cat == input$stat , '1', '0')
     tackles<-tackles %>% filter(selcat == '1') 
     
@@ -105,7 +109,11 @@ server <- function(input, output) {
     
     LL
   })
-   
+   teamStat <-reactive({
+     tStt <-limweek()
+     tStt <-group_by(tStt,team,cat,G_B,O_D)%>%
+       summarise(val=sum(val))
+   })
    output$winPlot <- renderPlot({
       ggplot(wins()[order(wins()$wins,decreasing=T),],aes(x=reorder(winner,-wins, function(x){ sum(x) }),wins))+
        geom_bar(stat='identity',aes(fill=highlight))+
@@ -130,6 +138,12 @@ server <- function(input, output) {
         ylab(input$stat)+
         scale_y_continuous(breaks=pretty_breaks())+
         geom_hline(yintercept=mean(fbStats()$val))
+    })
+    output$teamstats <- renderPlot({
+      ggplot(teamStat(),aes(cat,val))+
+        geom_bar(stat='identity')+
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+        facet_wrap(.~team )
     })
    
 }
