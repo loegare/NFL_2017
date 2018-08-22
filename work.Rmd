@@ -12,9 +12,13 @@ library(scales)
 drive<-readxl::read_xlsx('NFL.xlsx',sheet='Drive')
 game<-readxl::read_xlsx('NFL.xlsx',sheet='Game')
 play<-readxl::read_xlsx('NFL.xlsx',sheet='Player-Play')
-play<- merge(play,game,by="gameid")
 
 game_stats<-readxl::read_xlsx('NFL.xlsx',sheet='Stats')
+
+play<- merge(play,game_stats,by='cat')
+play<- merge(play,game,by="gameid")
+
+uniquestat<-game_stats$cat
 ```
 ```{r}
 tackles = sqldf('select * from play where cat="kickret_yds"')
@@ -25,7 +29,7 @@ sqldf('select * from tackles where team = "MIA"')
 ```{r}
 game2<- group_by(game,week, winner) %>%
       summarise(wins = n())
-game2<-sqldf('select * from game2 where week < 7' )
+game2<-sqldf('select * from game2 where week < 19' )
 game2$highlight <- ifelse(game2$winner == "KC" , '1', '0')
 ggplot(game2[order(game2$wins,decreasing=T),],aes(x=reorder(winner,-wins, function(x){ sum(x) }),wins))+geom_bar(stat='identity',aes(fill=highlight))+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
@@ -48,4 +52,113 @@ game2
     ggplot(LL,aes(paste(playername,team,sep='|'),val))+
         geom_bar(stat = 'identity')
 ```
+```{r}
+topTeam <-group_by(game2,winner)  %>% summarise(wins=sum(wins)) 
+top5teams<-topTeam[order(topTeam$wins,decreasing = TRUE),][0:5,]$winner
 
+bot5teams<-topTeam[order(topTeam$wins,decreasing = FALSE),][0:5,]$winner
+
+
+```
+```{r}
+
+teamStat <-group_by(play,team,cat,G_B,O_D)%>%
+       summarise(val=sum(val))
+#teamStat <-teamStat[teamStat$G_B =='G',]
+
+teamStat <-teamStat[teamStat$O_D =='O',]
+#ggplot(teamStat[teamStat$team %in% top5teams,],aes(cat,val))+
+#        geom_bar(stat='identity')+
+#        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))+
+#        facet_wrap(.~team )
+teamStat<-teamStat[teamStat$team %in% bot5teams | teamStat$team %in% top5teams ,]
+
+#uniquestat <-unique(teamStat$cat )
+#for (i in 1:length(uniquestat)){
+
+#tmpTS = sqldf(paste('select * from teamStat where cat = ',factor(uniquestat[as.numeric(i)]),sep=' ' ))
+#print(tmpTS)
+#plts = ggplot(tmpTS,aes(team,val))+
+ #       geom_bar(stat='identity')+
+#        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+#print(plts)
+#}
+```
+
+
+
+```{r}
+
+teamStat$topBot <- ifelse(teamStat$team %in% top5teams , '1', '0')
+
+makePlot <- function(species, data){
+
+#print(data$cat)
+plts = ggplot(data[data$cat %in% species,],aes(reorder(team,-val, function(x){ sum(x) }),val,fill=topBot))+
+        geom_bar(stat='identity')+
+        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))+
+      ggtitle(species)
+
+}
+
+lapply(unique(teamStat$cat), makePlot, data = teamStat)
+```
+
+```{r}
+drive$threeandout <- ifelse(drive$firstdowns==0 & drive$result == 'Punt',1,0)
+drive$tds <- ifelse( drive$result == 'Touchdown',1,0)
+```
+```{r}
+drive
+drive<-drive[drive$o_team %in% bot5teams | drive$o_team %in% top5teams ,]
+drive$topBot <- ifelse(drive$o_team %in% top5teams , '1', '0')
+
+```
+```{r}
+drive %>% group_by(gameid,o_team,topBot,topBot) %>%
+  summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
+  ggplot(aes(reorder(o_team,-firstdowns, function(x){ sum(x) }),firstdowns))+
+  geom_bar(stat = 'identity',aes(fill=topBot))
+```
+
+```{r}
+drive %>% group_by(gameid,o_team,topBot) %>%
+  summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
+  ggplot(aes(reorder(o_team,-threeandout, function(x){ sum(x) }),threeandout))+
+  geom_bar(stat = 'identity',aes(fill=topBot))
+```
+
+```{r}
+drive %>% group_by(gameid,o_team,topBot) %>%
+  summarise(tds = sum(tds)) %>%
+  ggplot(aes(reorder(o_team,-tds, function(x){ sum(x) }),tds))+
+  geom_bar(stat = 'identity',aes(fill=topBot))
+```
+```{r}
+drive<-readxl::read_xlsx('NFL.xlsx',sheet='Drive')
+drive<-drive[drive$d_team %in% bot5teams | drive$d_team %in% top5teams ,]
+drive$topBot <- ifelse(drive$d_team %in% top5teams , '1', '0')
+drive$threeandout <- ifelse(drive$firstdowns==0 & drive$result == 'Punt',1,0)
+drive$tds <- ifelse( drive$result == 'Touchdown',1,0)
+```
+
+```{r}
+drive %>% group_by(gameid,d_team,topBot) %>%
+  summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
+  ggplot(aes(reorder(d_team,-firstdowns, function(x){ sum(x) }),firstdowns))+
+  geom_bar(stat = 'identity',aes(fill=topBot))
+```
+
+```{r}
+drive %>% group_by(gameid,d_team,topBot) %>%
+  summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
+  ggplot(aes(reorder(d_team,-threeandout, function(x){ sum(x) }),threeandout))+
+  geom_bar(stat = 'identity',aes(fill=topBot))
+```
+
+```{r}
+drive %>% group_by(gameid,d_team,topBot) %>%
+  summarise(tds = sum(tds)) %>%
+  ggplot(aes(reorder(d_team,-tds, function(x){ sum(x) }),tds))+
+  geom_bar(stat = 'identity',aes(fill=topBot))
+```
