@@ -7,6 +7,7 @@ output: html_notebook
 ```{r}
 library(tidyverse)
 library(sqldf)
+library(forcats)
 
 library(scales)
 drive<-readxl::read_xlsx('NFL.xlsx',sheet='Drive')
@@ -96,8 +97,9 @@ makePlot <- function(species, data){
 #print(data$cat)
 plts = ggplot(data[data$cat %in% species,],aes(reorder(team,-val, function(x){ sum(x) }),val,fill=topBot))+
         geom_bar(stat='identity')+
-        theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))+
-      ggtitle(species)
+        theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+      ggtitle(species)+
+  xlab("Team")
 
 }
 
