@@ -65,7 +65,7 @@ ggplot(game2[order(game2$wins,decreasing=T),],aes(x=reorder(winner,-wins, functi
 
 ```
 
-To start I first looked at the records for all of the teams, and I determined I should look through the avaliable stats to see if there were any trends that seemed meaningful between the top performing teams, and the bottom ones.
+
 ```{r include=FALSE}
 topTeam <-group_by(game2,winner)  %>% summarise(wins=sum(wins)) 
 top5teams<-topTeam[order(topTeam$wins,decreasing = TRUE),][0:5,]$winner
@@ -173,9 +173,6 @@ o3O+ylim(c(0,60))
 d3O+ylim(c(0,60))
 ```
  
-I decided that these three stats on offense and defense could be clear indicators of a team that is likely to win games, as a team that has more first downs would have more offensive opportunities, and vice versa on defense. Clearly a team with more touchdowns and limits the touchdowns of their opponents will win more games, and minimizing three and outs on offense or maximizing them on defense is the counterpoint to first downs. A three and out is defined as any drive that did not contain a first down and ended in a punt.
-
-Interestingly the offensive stats did have some correlation with wins, even though Jacksonville did have the third most TDs and FDs, and TB had the most FDs and least three and outs by and large the top and bottom teams occupied opposite ends of the plots. Defensive touchdowns followed a similar pattern, with the top and bottom teams clustered, with a few exceptions. Suprisingly for me, seemingly strong indicators of a weak or strong defense did not seem to have any correlation with being in the top or bottom 5 teams. Time to dig deeper.
 
 \newpage
 ```{r}
@@ -270,7 +267,7 @@ tInt
 tSack
 ```
 
-Here as we dig deeper a pattern begins to show, teams that do better do a better job of protecting the ball, and their quarterback. This makes perfect sense as turnovers give the other team more chances to score, and limit your own opportunities. Sacks can cause multiple potential issues for a team. For one, a sack is generally accompanied by a loss of yards, which can make it more difficult to get a firstdown, and in addition to that when a QB is hit a lot in a game, their fatigue can quickly increase, and any rough collision could cause soreness that could lead to poor play down the line.
+
 
 \newpage
 # Extras
@@ -281,8 +278,20 @@ tPassTD
 
 ```
 
+
+To start I first looked at the records for all of the teams, and I determined I should look through the avaliable stats to see if there were any trends that seemed meaningful between the top performing teams, and the bottom ones.
+
+
+I decided that these three stats on offense and defense could be clear indicators of a team that is likely to win games, as a team that has more first downs would have more offensive opportunities, and vice versa on defense. Clearly a team with more touchdowns and limits the touchdowns of their opponents will win more games, and minimizing three and outs on offense or maximizing them on defense is the counterpoint to first downs. A three and out is defined as any drive that did not contain a first down and ended in a punt.
+
+Interestingly the offensive stats did have some correlation with wins, even though Jacksonville did have the third most TDs and FDs, and TB had the most FDs and least three and outs by and large the top and bottom teams occupied opposite ends of the plots. Defensive touchdowns followed a similar pattern, with the top and bottom teams clustered, with a few exceptions. Suprisingly for me, seemingly strong indicators of a weak or strong defense did not seem to have any correlation with being in the top or bottom 5 teams. Time to dig deeper.
+
+
+Here as we dig deeper a pattern begins to show, teams that do better do a better job of protecting the ball, and their quarterback. This makes perfect sense as turnovers give the other team more chances to score, and limit your own opportunities. Sacks can cause multiple potential issues for a team. For one, a sack is generally accompanied by a loss of yards, which can make it more difficult to get a firstdown, and in addition to that when a QB is hit a lot in a game, their fatigue can quickly increase, and any rough collision could cause soreness that could lead to poor play down the line.
+
 These last 3 plots I find to be a bit fun, because it shows some potentially misleading stats. The plots showing that rushing yards with the winning teams (generally) being above the losing teams could mean that having a very good ground game is essential to winning football games, but that is not truly the case, it is a side effect of strategy. When a team is ahead in the games, they tend to pass more, and rush less. This is also shown in the passing attempts plot.
 The duality of this struggle to catch back up by increasing passing attempts is shown in the final plot, indicating that for most of these teams, the increase in attempts is not also linked to an increased amount of scoring through the air.
+
 \newpage
 
 ```{r echo=TRUE,eval=FALSE}
