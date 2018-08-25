@@ -5,8 +5,8 @@ account: shnipes
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 398673
-bundleId: 1543352
+bundleId: 1553177
 url: https://shnipes.shinyapps.io/NFL_2017/
-when: 1534725133.36015
+when: 1535167798.2992
 asMultiple: FALSE
 asStatic: FALSE

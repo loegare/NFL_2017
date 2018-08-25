@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 
@@ -20,6 +22,27 @@ play<- merge(play,game_stats,by='cat')
 play<- merge(play,game,by="gameid")
 
 uniquestat<-game_stats$cat
+```
+```{r}
+NFLBlue <- rgb(1/255,51/255,105/255,1)
+NFLRed <- rgb(213/255,10/255,10/255,1)
+NFLWhite <-rgb(255/255.255/255,255/255,1)
+
+
+
+theme_NFL <- function () { 
+    theme_bw(base_size=10, base_family="sans") %+replace% 
+        theme(
+            axis.text.x=element_text(angle=30,
+                                     hjust=1,
+                                     vjust=1),
+            panel.background  = element_blank(),
+            plot.background = element_blank(),
+            panel.grid = element_blank(),
+            complete=TRUE
+        )
+}
+
 ```
 ```{r}
 tackles = sqldf('select * from play where cat="kickret_yds"')
@@ -90,16 +113,20 @@ teamStat<-teamStat[teamStat$team %in% bot5teams | teamStat$team %in% top5teams ,
 
 ```{r}
 
-teamStat$topBot <- ifelse(teamStat$team %in% top5teams , '1', '0')
+teamStat$topBot <- ifelse(teamStat$team %in% top5teams , 'Top Team', 'Bottom Team')
 
 makePlot <- function(species, data){
 
 #print(data$cat)
-plts = ggplot(data[data$cat %in% species,],aes(reorder(team,-val, function(x){ sum(x) }),val,fill=topBot))+
+plts = ggplot(data[data$cat %in% species,],aes(reorder(team,-val, function(x){ sum(x) }),val,fill= topBot))+
         geom_bar(stat='identity')+
         theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
       ggtitle(species)+
-  xlab("Team")
+  xlab("Team")+
+  scale_fill_manual(name='Top 5 Team',values=setNames(c(NFLBlue,NFLRed),c('Top Team','Bottom Team')))+
+  theme_NFL()
+  #scale_colour_manual(name = 'PC1 > 0', values = setNames(c('red','green'),c(T, F))) 
+  
 
 }
 
@@ -111,35 +138,56 @@ drive$threeandout <- ifelse(drive$firstdowns==0 & drive$result == 'Punt',1,0)
 drive$tds <- ifelse( drive$result == 'Touchdown',1,0)
 ```
 ```{r}
-drive
 drive<-drive[drive$o_team %in% bot5teams | drive$o_team %in% top5teams ,]
-drive$topBot <- ifelse(drive$o_team %in% top5teams , '1', '0')
+drive$topBot <- ifelse(drive$o_team %in% top5teams , 'Top Team', 'Bottom Team')
 
 ```
 ```{r}
 drive %>% group_by(gameid,o_team,topBot,topBot) %>%
   summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
   ggplot(aes(reorder(o_team,-firstdowns, function(x){ sum(x) }),firstdowns))+
-  geom_bar(stat = 'identity',aes(fill=topBot))
+  geom_bar(stat = 'identity',aes(fill=topBot))+
+  scale_fill_manual(name='Top 5 Team',values=setNames(c(NFLBlue,NFLRed),c('Top Team','Bottom Team')))+
+  xlab("Team")+
+  ylab('Offensive First Downs')+
+  theme_NFL()
+```
+
+```{r}
+playCount <- play %>% group_by(team,cat,playername)%>% group_by(team,cat)%>%summarise(playername=n())
+#playCount
+#tempPC <- playCount %>% filter(team == 'TB' & cat == 'kicking_fga') 
+#tempPC <- playCount %>% filter(playCount$team == 'TB')#& playCount$cat == 'kicking_fga') 
+#print(playCount %>% filter(team == 'TB' & cat == 'kicking_fga') %>% select(playername))
+
+subset(playCount, team == 'TB' & cat == 'kicking_fga')$playername*5
 ```
 
 ```{r}
 drive %>% group_by(gameid,o_team,topBot) %>%
   summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
   ggplot(aes(reorder(o_team,-threeandout, function(x){ sum(x) }),threeandout))+
-  geom_bar(stat = 'identity',aes(fill=topBot))
+  geom_bar(stat = 'identity',aes(fill=topBot))+
+  scale_fill_manual(name='Top 5 Team',values=setNames(c(NFLBlue,NFLRed),c('Top Team','Bottom Team')))+
+  xlab("Team")+
+  ylab('Offensive Three and Outs')+
+  theme_NFL()
 ```
 
 ```{r}
 drive %>% group_by(gameid,o_team,topBot) %>%
   summarise(tds = sum(tds)) %>%
   ggplot(aes(reorder(o_team,-tds, function(x){ sum(x) }),tds))+
-  geom_bar(stat = 'identity',aes(fill=topBot))
+  geom_bar(stat = 'identity',aes(fill=topBot))+
+  scale_fill_manual(name='Top 5 Team',values=setNames(c(NFLBlue,NFLRed),c('Top Team','Bottom Team')))+
+  xlab("Team")+
+  ylab('Offensive Touchdowns')+
+  theme_NFL()
 ```
 ```{r}
 drive<-readxl::read_xlsx('NFL.xlsx',sheet='Drive')
 drive<-drive[drive$d_team %in% bot5teams | drive$d_team %in% top5teams ,]
-drive$topBot <- ifelse(drive$d_team %in% top5teams , '1', '0')
+drive$topBot <- ifelse(drive$d_team %in% top5teams , 'Top Team', 'Bottom Team')
 drive$threeandout <- ifelse(drive$firstdowns==0 & drive$result == 'Punt',1,0)
 drive$tds <- ifelse( drive$result == 'Touchdown',1,0)
 ```
@@ -148,19 +196,30 @@ drive$tds <- ifelse( drive$result == 'Touchdown',1,0)
 drive %>% group_by(gameid,d_team,topBot) %>%
   summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
   ggplot(aes(reorder(d_team,-firstdowns, function(x){ sum(x) }),firstdowns))+
-  geom_bar(stat = 'identity',aes(fill=topBot))
+  geom_bar(stat = 'identity',aes(fill=topBot))+theme_NFL()+
+  xlab("Team")+
+  scale_fill_manual(name='Top 5 Team',values=setNames(c(NFLBlue,NFLRed),c('Top Team','Bottom Team')))+
+  ylab('Defensive First Downs')
 ```
 
 ```{r}
 drive %>% group_by(gameid,d_team,topBot) %>%
   summarise(firstdowns = sum(firstdowns),threeandout = sum(threeandout)) %>%
   ggplot(aes(reorder(d_team,-threeandout, function(x){ sum(x) }),threeandout))+
-  geom_bar(stat = 'identity',aes(fill=topBot))
+  geom_bar(stat = 'identity',aes(fill=topBot))+
+  scale_fill_manual(name='Top 5 Team',values=setNames(c(NFLBlue,NFLRed),c('Top Team','Bottom Team')))+
+  theme_NFL()+
+  xlab("Team")+
+  ylab('Defensive Three and Outs')
 ```
 
-```{r}
+```{r echo=FALSE}
 drive %>% group_by(gameid,d_team,topBot) %>%
   summarise(tds = sum(tds)) %>%
   ggplot(aes(reorder(d_team,-tds, function(x){ sum(x) }),tds))+
-  geom_bar(stat = 'identity',aes(fill=topBot))
+  geom_bar(stat = 'identity',aes(fill=topBot))+
+  scale_fill_manual(name='Top 5 Team',values=setNames(c(NFLBlue,NFLRed),c('Top Team','Bottom Team')))+
+  xlab("Team")+
+  theme_NFL()+
+  ylab('Defensive Touchdowns')
 ```
